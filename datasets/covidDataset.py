@@ -47,7 +47,8 @@ class CovidDataset(Dataset):
             img = np.vstack(img)
         img = img[..., np.newaxis, np.newaxis]
         img = img.transpose((3, 2, 1, 0))
-        return torch.from_numpy(img), label
+        label = [int(label)]
+        return torch.from_numpy(img), torch.tensor(label, dtype=torch.float32)
 
 
 
