@@ -53,7 +53,7 @@ class TrainClass:
                             if metric > best_metric:
                                 best_metric = metric
                                 print("Saving best model at %1.3f" % best_metric)
-                                torch.save(self.model.state_dict(), os.path.join(self.save_path, "best_model.pt"))
+                                torch.save(self.model.state_dict(), os.path.join(self.save_path, "best_model_uncalibrated.pt"))
                             print("\t")
                             print("Validation metric: %1.3f" % metric)
         print('Finished Training')

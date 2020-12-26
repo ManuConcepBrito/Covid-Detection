@@ -33,13 +33,13 @@ class CovidDataset(Dataset):
         for idx, row in data_split.iterrows():
             image = io.imread(row['X'], as_gray=True)
             label = str(row['y'])
-            self.data.append({'image': image, 'label': label})
+            self.data.append({"image": image, "label": label})
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx: int):
-        img, label = self.data[idx]['image'], self.data[idx]['label']
+        img, label = self.data[idx]["image"], self.data[idx]["label"]
         img = Image.fromarray(img)
         if self.transform:
             img = self.transform(img)

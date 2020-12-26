@@ -23,7 +23,7 @@ class ReliabilityDiagram(nn.Module):
         positives_per_bin = []
         confidence_per_bin = []
         for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
-            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.itme())
+            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
             # if there is any element in that range
             if in_bin.float().mean().item() > 0:
                 # positives in bin
@@ -33,5 +33,47 @@ class ReliabilityDiagram(nn.Module):
 
         return positives_per_bin, confidence_per_bin
 
-    def plot(self):
-        pass
+
+class TemperatureScaling(nn.Module):
+    """
+    Temperature scaling for binary classifier
+
+    :param model: model to tune
+    :param val_data: validation set to perform scaling
+    :param val_labels: validation set labels
+    """
+    def __init__(self, model, val_data, val_labels):
+        super(TemperatureScaling, self).__init__()
+        self.model = model
+        self.val_data = val_data
+        self.val_labels = val_labels
+        self.temperature = nn.Parameter(torch.ones(1))
+
+    def forward(self):
+        logits = self.model(self.val_data)
+        temperature = self.temperature.expand(logits.size(0))
+        return logits / temperature
+
+    def temperature_scale(self):
+        """
+        Set temperature for model using validation set.
+
+        Insipired from: https://github.com/gpleiss/temperature_scaling/blob/master/temperature_scaling.py
+        """
+        nll = nn.CrossEntropyLoss()
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iterm=50)
+
+        def eval():
+            loss = nll(self.forward(), self.val_labels)
+            loss.backward()
+            return loss
+        optimizer.step(eval)
+
+        return self
+
+
+
+
+
+
+
