@@ -6,7 +6,7 @@ class TrainClass:
 
     def __init__(self, model, loss_fn, optimizer, metric, train_data,
                  val_data=None, epochs=10, print_every=500,
-                 save_best=True, save_path="models/"):
+                 save_best=True, save_path="models/weights"):
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
