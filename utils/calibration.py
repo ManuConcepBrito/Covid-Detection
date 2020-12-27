@@ -22,16 +22,26 @@ class ReliabilityDiagram(nn.Module):
         confidences = torch.sigmoid(logits)
         positives_per_bin = []
         confidence_per_bin = []
+        # expected calibration error
+        ece = 0
+        # maximum ece
+        max_ece = 0
         for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
             in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
             # if there is any element in that range
             if in_bin.float().mean().item() > 0:
                 # positives in bin
-                positives_per_bin.append(labels[in_bin].float().mean().item())
+                positives_in_bin = labels[in_bin].float().mean().item()
+                positives_per_bin.append(positives_in_bin)
                 # confidence in bin
-                confidence_per_bin.append(confidences[in_bin].float().mean().item())
+                confidences_in_bin = confidences[in_bin].float().mean().item()
+                confidence_per_bin.append(confidences_in_bin)
+                ece_i = abs(positives_in_bin - confidences_in_bin)
+                if ece_i > max_ece:
+                    max_ece = ece_i
+                ece += ece_i
 
-        return positives_per_bin, confidence_per_bin
+        return positives_per_bin, confidence_per_bin, ece, max_ece
 
 
 class TemperatureScaling(nn.Module):
