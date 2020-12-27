@@ -39,18 +39,16 @@ class TemperatureScaling(nn.Module):
     Temperature scaling for binary classifier
 
     :param model: model to tune
-    :param val_data: validation set to perform scaling
-    :param val_labels: validation set labels
+    :param val_loader:
     """
-    def __init__(self, model, val_data, val_labels):
+    def __init__(self, model, val_loader):
         super(TemperatureScaling, self).__init__()
         self.model = model
-        self.val_data = val_data
-        self.val_labels = val_labels
+        self.val_loader = val_loader
         self.temperature = nn.Parameter(torch.ones(1))
 
-    def forward(self):
-        logits = self.model(self.val_data)
+    def forward(self, inp):
+        logits = self.model(inp)
         temperature = self.temperature.expand(logits.size(0))
         return logits / temperature
 
@@ -60,14 +58,20 @@ class TemperatureScaling(nn.Module):
 
         Insipired from: https://github.com/gpleiss/temperature_scaling/blob/master/temperature_scaling.py
         """
-        nll = nn.CrossEntropyLoss()
-        optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iterm=50)
+        nll = nn.BCEWithLogitsLoss()
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iter=50)
+        print("Temperature before scaling: %1.3f" % self.temperature)
 
         def eval():
-            loss = nll(self.forward(), self.val_labels)
-            loss.backward()
+            loss = 0
+            for i in range(len(self.val_loader)):
+                img, label = self.val_loader[i]
+                loss = nll(self.forward(img), label)
+                loss.backward()
             return loss
+
         optimizer.step(eval)
+        print("Temperature after scaling: %1.3f" % self.temperature)
 
         return self
 
